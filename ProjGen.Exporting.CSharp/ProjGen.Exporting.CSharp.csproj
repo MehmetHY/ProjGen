@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../ProjGen.Models/ProjGen.Models.csproj" />
+    <ProjectReference Include="../ProjGen.Parsing/ProjGen.Parsing.csproj" />
+    <ProjectReference Include="../ProjGen.Exporting/ProjGen.Exporting.csproj" />
+  </ItemGroup>
+
+</Project>
