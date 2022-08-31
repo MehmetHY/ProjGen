@@ -16,7 +16,7 @@ public class DefaultParser : IParser
         ParseName();
         ParseAssemblies();
         ParseReferences();
-        // ParseNamespaces();
+        ParseNamespaces();
         // ParseUnits();
 
         return _model;
@@ -72,7 +72,7 @@ public class DefaultParser : IParser
 
             var matches = Regex.Matches(refsText,
                                         @" {8}(?<name>\S+)",
-                                        RegexOptions.Singleline);
+                                        RegexOptions.Multiline);
 
             foreach (var match in matches.AsEnumerable())
             {
@@ -88,10 +88,35 @@ public class DefaultParser : IParser
 
     private void ParseNamespaces()
     {
-        throw new NotImplementedException();
+        var matches = Regex.Matches(_text,
+                                    @"^(?<assembly>\S+);(?<namespace>\S*)?",
+                                    RegexOptions.Multiline);
+
+        foreach (var match in matches.AsEnumerable())
+        {
+            var assemblyName = match.Groups["assembly"].Value;
+            var assembly = _model.Assemblies.First(a => a.Name == assemblyName);
+            var nsName = match.Groups["namespace"].Value;
+
+            if (nsName == string.Empty)
+                nsName = assemblyName;
+
+            if (assembly.Namespaces.Any(a => a.Name == nsName))
+                return;
+
+            var ns = new NamespaceModel { Name = nsName };
+            assembly.Namespaces.Add(ns);
+        }
     }
 
     private void ParseUnits()
+    {
+        // methods
+        // [\r|\n]\s+(?<methodName>[A-Z]\w+)\((?<args>.*)\)(?:\s*\-\>\s*(?<returnType>\w+))?
+        throw new NotImplementedException();
+    }
+
+    private void ParseMembers()
     {
         // methods
         // [\r|\n]\s+(?<methodName>[A-Z]\w+)\((?<args>.*)\)(?:\s*\-\>\s*(?<returnType>\w+))?

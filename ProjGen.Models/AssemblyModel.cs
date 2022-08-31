@@ -1,6 +1,6 @@
 namespace ProjGen.Models;
 
-public class AssemblyModel : NamespaceModel
+public class AssemblyModel
 {
     public enum AssemblyType { Invalid, Library, Executable, UnitTest }
 
@@ -12,6 +12,8 @@ public class AssemblyModel : NamespaceModel
         _ => AssemblyType.Invalid
     };
 
+    public string? Name { get; set; }
     public AssemblyType Type { get; set; }
     public List<AssemblyModel> References { get; set; } = new();
+    public List<NamespaceModel> Namespaces { get; set; } = new();
 }
