@@ -17,7 +17,8 @@ public class DefaultParser : IParser
         ParseAssemblies();
         ParseReferences();
         ParseNamespaces();
-        // ParseUnits();
+        ParseUnits();
+        // ParseMembers();
 
         return _model;
     }
@@ -111,9 +112,67 @@ public class DefaultParser : IParser
 
     private void ParseUnits()
     {
-        // methods
-        // [\r|\n]\s+(?<methodName>[A-Z]\w+)\((?<args>.*)\)(?:\s*\-\>\s*(?<returnType>\w+))?
-        throw new NotImplementedException();
+        foreach (var assembly in _model.Assemblies)
+        {
+            foreach (var ns in assembly.Namespaces)
+            {
+                var nsFullName = assembly.Name == ns.Name ?
+                    $"{assembly.Name};" :
+                    $"{assembly.Name};{ns.Name}";
+
+                var unitsText = Regex.Match(
+                    _text,
+                    @"\n"
+                    + nsFullName
+                    + @" *\n(?<units>[\s\S]*?)(?:(?:\n\S)|(?:\s*$))"
+                ).Groups["units"].Value;
+
+                var matches = Regex.Matches(
+                    unitsText,
+                    @"^ {4}(?<name>\w+)(?:\<(?<generic>.+?)\>)? *(?:: *(?<inherit>.+))?",
+                    RegexOptions.Multiline
+                );
+
+                foreach (var match in matches.AsEnumerable())
+                {
+                    var unitName = match.Groups["name"].Value;
+
+                    var type = Regex.IsMatch(unitName,
+                                             @"\bI[A-Z]",
+                                             RegexOptions.Multiline) ?
+                        UnitModel.UnitType.Interface :
+                        UnitModel.UnitType.Class;
+
+                    var unitGenericText = match.Groups["generic"].Value;
+
+                    var unitGenerics = unitGenericText.Split(
+                        ',',
+                        StringSplitOptions.TrimEntries
+                        | StringSplitOptions.RemoveEmptyEntries
+                    ).ToList();
+
+                    var unitInheritText = match.Groups["inherit"].Value;
+
+                    var inheritMatches = Regex.Matches(
+                        unitInheritText,
+                        @"(?<inherit>(?:\b\w+\<.*?\>)|(?:\b\w+))"
+                    );
+
+                    var unitInherits = new List<string>();
+
+                    foreach (var m in inheritMatches.AsEnumerable())
+                        unitInherits.Add(m.Groups["inherit"].Value);
+
+                    ns.Units.Add(new()
+                    {
+                        Name = unitName,
+                        Generics = unitGenerics,
+                        InheritedTypes = unitInherits,
+                        Type = type
+                    });
+                }
+            }
+        }
     }
 
     private void ParseMembers()
