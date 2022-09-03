@@ -25,14 +25,14 @@ public static class RegexExtension
         return list;
     }
 
-    public static string GetRegexGroup(this string text,
+    public static string RegexGroup(this string text,
                                        string regex,
                                        string groupName,
                                        RegexOptions options = RegexOptions.None)
         => Regex.Match(text, regex, options).Groups[groupName].Value;
 
 
-    public static List<string> GetRegexGroups(
+    public static List<string> RegexGroups(
         this string text,
         string regex,
         string groupName,

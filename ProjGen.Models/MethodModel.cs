@@ -3,7 +3,5 @@ namespace ProjGen.Models;
 public class MethodModel : GenericComponent
 {
     public string? ReturnType { get; set; }
-
-    public IEnumerable<VariableModel> Args { get; set; }
-        = new List<VariableModel>();
+    public List<VariableModel> Args { get; set; } = new();
 }

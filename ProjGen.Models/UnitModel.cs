@@ -6,10 +6,6 @@ public class UnitModel : GenericComponent
 
     public UnitType Type { get; set; }
     public string? Namespace { get; set; }
-
-    public IEnumerable<PropertyModel> Properties { get; set; }
-        = new List<PropertyModel>();
-
-    public IEnumerable<MethodModel> Methods { get; set; }
-        = new List<MethodModel>();
+    public List<PropertyModel> Properties { get; set; } = new();
+    public List<MethodModel> Methods { get; set; } = new();
 }

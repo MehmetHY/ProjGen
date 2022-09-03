@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.RegularExpressions;
 using ProjGen.Models;
 using ProjGen.Utils.Extensions;
@@ -9,19 +10,46 @@ public class DefaultParser : IParser
     private readonly ProjectModel _model = new();
     private string _text = string.Empty;
 
-    public ProjectModel Parse(string text)
+    public DefaultParser(string text)
     {
         _text = text;
+    }
 
+    public ProjectModel Parse()
+    {
         NormalizeText();
         ParseName();
         ParseAssemblies();
-        ParseReferences();
-        ParseNamespaces();
-        ParseUnits();
-        ParseMembers();
+
+        foreach (var assembly in _model.Assemblies)
+            ParseDirectories(assembly, _text);
 
         return _model;
+    }
+
+    private void ParseName()
+    {
+        _model.Name = _text.RegexMatch(@"^\S+(?=\/)",
+                                       RegexOptions.Multiline).Value;
+    }
+
+    private void ParseAssemblies()
+    {
+        _text.RegexMatches(@"^ {4}(?<name>\S+)/\s*(?<type>\S+)\s",
+                           RegexOptions.Multiline).Map(match =>
+        {
+            var name = match.Groups["name"].Value;
+
+            var type = match.Groups["type"].Value switch
+            {
+                "exe" => AssemblyModel.AssemblyType.Executable,
+                "lib" => AssemblyModel.AssemblyType.Library,
+                "test" => AssemblyModel.AssemblyType.Test,
+                _ => AssemblyModel.AssemblyType.None
+            };
+
+            _model.Assemblies.Add(new() { Name = name, Type = type });
+        });
     }
 
 
@@ -31,101 +59,44 @@ public class DefaultParser : IParser
         _text = _text.Replace("\r", "");
     }
 
-    private void ParseName()
-    {
-    }
-
-    private void ParseAssemblies()
-    {
-    }
-
-    private void ParseReferences()
-    {
-    }
-
-    private void ParseNamespaces()
-    {
-    }
-
-    private void ParseUnits()
-    {
-    }
-
-    private void ParseMembers()
-    {
-    }
-
-
 
     #region Helpers
 
-    private string GetFullNamespace(AssemblyModel assembly, NamespaceModel ns)
+    static void ParseDirectories(ProjectComponent component,
+                                 string subtext,
+                                 int level = 1)
     {
-        var nsFullName = assembly.Name == ns.Name ?
-            $"{assembly.Name};" : $"{assembly.Name};{ns.Name}";
+        var sb = new StringBuilder();
 
-        return nsFullName;
+        for (int i = 0; i < level; ++i)
+            sb.Append("    ");
+
+        var indent = sb.ToString();
+
     }
 
-    private string GetUnitsAsText(string namespaceFull)
-        => _text.GetRegexGroup(@"" + namespaceFull + @"", "namespace");
-
-    private string GetMembersAsText(string unitsText, string unitName)
-        => unitsText.GetRegexGroup(@"" + unitName + @"", "members");
-    
-    private void LoopAssemblies(Action<AssemblyModel> action)
+    static void ParseUnits(ProjectComponent component,
+                           string subtext,
+                           int level = 1)
     {
-        foreach (var assembly in _model.Assemblies)
-            action(assembly);
     }
 
-    private void LoopNamespaces(Action<AssemblyModel, NamespaceModel> action)
+    static void ParseProperties(ProjectComponent component,
+                                string subtext,
+                                int level = 1)
     {
-        LoopAssemblies(assembly =>
-        {
-            foreach (var ns in assembly.Namespaces)
-                action(assembly, ns);
-        });
     }
 
-    private void LoopUnits(
-        Action<AssemblyModel, NamespaceModel, UnitModel> action
-    )
+    static void ParseMethods(ProjectComponent component,
+                             string subtext,
+                             int level = 1)
     {
-        LoopNamespaces((assembly, ns) =>
-        {
-            foreach (var unit in ns.Units)
-                action(assembly, ns, unit);
-        });
     }
 
-    static List<PropertyModel> ParseProperties(string membersText)
+    static void ParseArguments(ProjectComponent component,
+                               string subtext,
+                               int level = 1)
     {
-        var list = new List<PropertyModel>();
-
-
-        return list;
-    }
-
-    static List<MethodModel> ParseMethods(string membersText)
-    {
-        var list = new List<MethodModel>();
-
-
-        return list;
-    }
-
-    /// <summary>
-    /// </summary>
-    /// <param name="varsText">
-    /// Input text. Example: "name: string, age: int"
-    /// </param>
-    /// <returns></returns>
-    static List<VariableModel> ParseVariables(string varsText)
-    {
-        var list = new List<VariableModel>();
-
-        return list;
     }
 
     #endregion
