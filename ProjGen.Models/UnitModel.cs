@@ -1,29 +1,15 @@
-using System.Text;
-
 namespace ProjGen.Models;
 
-public class UnitModel
+public class UnitModel : GenericComponent
 {
-    public enum UnitType { Class, Interface }
+    public enum UnitType { None, Class, Interface }
 
-    public string? Name { get; set; }
     public UnitType Type { get; set; }
-    public List<string> Generics { get; set; } = new();
-    public List<string> InheritedTypes { get; set; } = new();
-    public List<PropertyModel> Properties { get; set; } = new();
-    public List<MethodModel> Methods { get; set; } = new();
+    public string? Namespace { get; set; }
 
-    public override string ToString()
-    {
-        var sb = new StringBuilder(Name);
+    public IEnumerable<PropertyModel> Properties { get; set; }
+        = new List<PropertyModel>();
 
-        if (Generics.Count > 0)
-        {
-            sb.Append('<')
-              .Append(string.Join(", ", Generics))
-              .Append('>');
-        }
-
-        return sb.ToString();
-    }
+    public IEnumerable<MethodModel> Methods { get; set; }
+        = new List<MethodModel>();
 }
