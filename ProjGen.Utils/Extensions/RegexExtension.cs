@@ -54,4 +54,10 @@ public static class RegexExtension
         foreach (var match in matches.AsEnumerable())
             action(match);
     }
+
+
+    public static bool RegexIsMatch(this string text,
+                                    string regex,
+                                    RegexOptions options = RegexOptions.None)
+        => Regex.IsMatch(text, regex, options);
 }

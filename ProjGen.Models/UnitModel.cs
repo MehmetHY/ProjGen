@@ -8,4 +8,5 @@ public class UnitModel : GenericComponent
     public string? Namespace { get; set; }
     public List<PropertyModel> Properties { get; set; } = new();
     public List<MethodModel> Methods { get; set; } = new();
+    public List<TypeModel> Inherits { get; set; } = new();
 }

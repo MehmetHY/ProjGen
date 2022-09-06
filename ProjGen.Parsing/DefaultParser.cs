@@ -21,9 +21,6 @@ public class DefaultParser : IParser
         ParseName();
         ParseAssemblies();
 
-        foreach (var assembly in _model.Assemblies)
-            ParseDirectories(assembly, _text);
-
         return _model;
     }
 
@@ -35,8 +32,9 @@ public class DefaultParser : IParser
 
     private void ParseAssemblies()
     {
-        _text.RegexMatches(@"^ {4}(?<name>\S+)/\s*(?<type>\S+)\s",
-                           RegexOptions.Multiline).Map(match =>
+        _text.RegexMatches(
+            @"[\n|\a] {4}(?<name>\S+)/\s*(?<type>\S+)\s*\n(?<content>(?: {8,}[\s\S]+?\n)+)?",
+            RegexOptions.Multiline).Map(match =>
         {
             var name = match.Groups["name"].Value;
 
@@ -48,7 +46,10 @@ public class DefaultParser : IParser
                 _ => AssemblyModel.AssemblyType.None
             };
 
-            _model.Assemblies.Add(new() { Name = name, Type = type });
+            var content = match.Groups["name"].Value;
+            var model = new AssemblyModel { Name = name, Type = type };
+            ParseComponents(model, content);
+            _model.Assemblies.Add(model);
         });
     }
 
@@ -59,45 +60,132 @@ public class DefaultParser : IParser
         _text = _text.Replace("\r", "");
     }
 
-
-    #region Helpers
-
-    static void ParseDirectories(ProjectComponent component,
-                                 string subtext,
-                                 int level = 1)
+    private void ParseComponents(ProjectComponent component,
+                                 string text,
+                                 int indent = 8)
     {
-        var sb = new StringBuilder();
+        // dirs
+        text.RegexMatches(@"(?:\n|\A) {"
+                          + indent.ToString()
+                          + @"}(?<dir>\S+)\/\s*\n(?<content>(?: {"
+                          + (indent + 4).ToString()
+                          + @",}[\s\S]*?(?:\z|\n))*)")
+            .Map(match =>
+        {
+            var name = match.Groups["dir"].Value;
+            var content = match.Groups["content"].Value;
+            var model = new DirectoryModel { Name = name };
+            component.AddChild(model);
+            ParseComponents(model, content, indent + 4);
+        });
 
-        for (int i = 0; i < level; ++i)
-            sb.Append("    ");
+        // units
+        text.RegexMatches(
+            @"(?<=(?:\A|\n) {"
+            + indent.ToString()
+            + @"})(?:(?<interface>I[A-Z]\w+)|(?<class>\w+))(?!.*\/)(?:\<(?<generic>[\w<> ,]+)\>)?(?: *: *(?<inherit>.+))?(?<content>(?:\n {"
+            + (indent + 4).ToString()
+            + @"}.*)+)?"
+        ).Map(match =>
+        {
+            var type = match.Groups["class"].Length > 0 ?
+                UnitModel.UnitType.Class : UnitModel.UnitType.Interface;
 
-        var indent = sb.ToString();
+            var name = type == UnitModel.UnitType.Class ?
+                match.Groups["class"].Value : match.Groups["interface"].Value;
 
+            var genericsText = match.Groups["generic"].Value;
+            var generics = ParseGenerics(genericsText);
+            var inheritText = match.Groups["inherit"].Value;
+            var inherits = ParseInherits(inheritText);
+            var content = match.Groups["content"].Value;
+
+            var model = new UnitModel
+            {
+                Name = name,
+                GenericTypes = generics,
+                Inherits = inherits,
+                Type = type
+            };
+
+            component.AddChild(model);
+            model.GenerateNamespace();
+            ParseUnit(model, content);
+        });
     }
 
-    static void ParseUnits(ProjectComponent component,
-                           string subtext,
-                           int level = 1)
+    public static List<TypeModel> ParseGenerics(string genericsText,
+                                                TypeModel? parent = null,
+                                                List<TypeModel>? list = null)
     {
+        if (list == null)
+            list = new List<TypeModel>();
+
+        // https://regex101.com/r/Qxd5oM/1
+        // https://regex101.com/delete/4T9mfHJfSVISYtS3Vj0hziil
+
+        var match = genericsText.RegexMatch(
+            @"^\s*(?:(?:(?<newGeneric>\w+)<)|(?<newType>\w+)|(?<endGeneric>>))[ ,]*(?<rest>.*)"
+        );
+
+        var newType = match.Groups["newType"].Value;
+        var newGeneric = match.Groups["newGeneric"].Value;
+
+        var endGeneric = !string.IsNullOrWhiteSpace(
+            match.Groups["endGeneric"].Value);
+
+        var rest = match.Groups["rest"].Value;
+
+        TypeModel? nextParent;
+
+        if (!string.IsNullOrWhiteSpace(newType))
+        {
+            var type = new TypeModel { Name = newType, Parent = parent };
+
+            if (parent != null)
+                parent.Generics.Add(type);
+            else
+                list.Add(type);
+
+            nextParent = parent;
+        }
+        else if (!string.IsNullOrWhiteSpace(newGeneric))
+        {
+            var type = new TypeModel { Name = newGeneric, Parent = parent };
+
+            if (parent != null)
+                parent.Generics.Add(type);
+            else
+                list.Add(type);
+
+            nextParent = type;
+        }
+        else if (endGeneric)
+        {
+            if (parent == null)
+                throw new Exception($"bad generic text: $'{genericsText}'");
+
+            nextParent = parent.Parent;
+        }
+        else
+        {
+            throw new Exception($"bad generic text: '{genericsText}'");
+        }
+
+
+        if (!string.IsNullOrWhiteSpace(rest))
+            return ParseGenerics(rest, nextParent, list);
+
+        return list;
     }
 
-    static void ParseProperties(ProjectComponent component,
-                                string subtext,
-                                int level = 1)
+    private List<TypeModel> ParseInherits(string genericsText)
     {
+        throw new NotImplementedException();
     }
 
-    static void ParseMethods(ProjectComponent component,
-                             string subtext,
-                             int level = 1)
+    private void ParseUnit(UnitModel model, string content)
     {
+        throw new NotImplementedException();
     }
-
-    static void ParseArguments(ProjectComponent component,
-                               string subtext,
-                               int level = 1)
-    {
-    }
-
-    #endregion
 }
