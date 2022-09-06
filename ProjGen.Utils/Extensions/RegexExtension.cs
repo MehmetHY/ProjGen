@@ -60,4 +60,12 @@ public static class RegexExtension
                                     string regex,
                                     RegexOptions options = RegexOptions.None)
         => Regex.IsMatch(text, regex, options);
+
+
+    public static string RegexReplace(this string text,
+                                    string regex,
+                                    string replacement,
+                                    RegexOptions options = RegexOptions.None)
+        => Regex.Replace(text, regex, replacement, options);
+
 }
