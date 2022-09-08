@@ -33,10 +33,6 @@ public class DefaultParser : IParser
         throw new NotImplementedException();
     }
 
-    private void ParseUnit(UnitModel model, string content)
-    {
-        throw new NotImplementedException();
-    }
 
     public AssemblyModel ParseAssembly(string text)
     {
@@ -54,13 +50,17 @@ public class DefaultParser : IParser
         return new() { Name = name, Type = type };
     }
 
-    public DirectoryModel ParseDirectory(string text)
+    public static DirectoryModel ParseDirectory(string text)
     {
         var name = text.RegexGroup(@"^(?<directory>\S+)/", "directory");
 
         return new() { Name = name };
     }
 
+    private UnitModel ParseUnit(string content)
+    {
+        throw new NotImplementedException();
+    }
 
     public static MethodModel ParseMethod(string text)
     {
@@ -91,6 +91,29 @@ public class DefaultParser : IParser
             GenericTypes = generics,
             Args = args,
             ReturnType = returnType
+        };
+    }
+
+    public static PropertyModel ParseProperty(string text)
+    {
+        var match = text.RegexMatch(
+            @"^(?<name>\w+): (?<type>.+) (?<get>get)?(?<set>set)?"
+        );
+
+        var name = match.Groups["name"].Value;
+        var typeText = match.Groups["type"].Value;
+        var type = ParseType(typeText);
+        var getText = match.Groups["get"].Value;
+        var setText = match.Groups["set"].Value;
+        var hasGet = !string.IsNullOrWhiteSpace(getText);
+        var hasSet = !string.IsNullOrWhiteSpace(setText);
+
+        return new()
+        {
+            Name = name,
+            Type = type,
+            HasGet = hasGet,
+            HasSet = hasSet
         };
     }
 
