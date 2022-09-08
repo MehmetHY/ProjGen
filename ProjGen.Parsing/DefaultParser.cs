@@ -57,9 +57,38 @@ public class DefaultParser : IParser
         return new() { Name = name };
     }
 
-    private UnitModel ParseUnit(string content)
+    public static UnitModel ParseUnit(string text)
     {
-        throw new NotImplementedException();
+        // ^(?<unityType>class|interface) (?<name>\w+)(?:<(?<generic>.+?)>)?(?: : (?<inherit>.+))?
+        var match = text.RegexMatch(
+            @"^(?<unitType>class|interface) (?<name>\w+)(?:<(?<generic>.+?)>)?(?: : (?<inherit>.+))?"
+        );
+
+        var type = match.Groups["unitType"].Value switch
+        {
+            "class" => UnitModel.UnitType.Class,
+            "interface" => UnitModel.UnitType.Interface,
+            _ => UnitModel.UnitType.None
+        };
+
+        var name = match.Groups["name"].Value;
+        var genericText = match.Groups["generic"].Value;
+
+        var generics = string.IsNullOrWhiteSpace(genericText) ?
+            new List<TypeModel>() : ParseGeneric(genericText);
+
+        var inheritText = match.Groups["inherit"].Value;
+
+        var inherits = string.IsNullOrWhiteSpace(inheritText) ?
+            new List<TypeModel>() : ParseGeneric(inheritText);
+
+        return new()
+        {
+            Name = name,
+            Type = type,
+            GenericTypes = generics,
+            Inherits = inherits
+        };
     }
 
     public static MethodModel ParseMethod(string text)
