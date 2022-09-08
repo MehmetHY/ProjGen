@@ -1,4 +1,4 @@
-namespace ProjGenj.Utils.Extensions;
+namespace ProjGen.Utils.Extensions;
 
 public static class StringExtension
 {

@@ -20,6 +20,17 @@ public class ProjectComponent
             MapTree(action);
     }
 
+    public List<T> OfTypeInChildren<T>()
+    {
+        var list = new List<T>();
+
+        foreach (var child in Children)
+            if (child is T t)
+                list.Add(t);
+
+        return list;
+    }
+
     public List<T> OfTypeInTree<T>()
     {
         var list = new List<T>();
