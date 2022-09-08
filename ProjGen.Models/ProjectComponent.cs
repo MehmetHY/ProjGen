@@ -11,4 +11,27 @@ public class ProjectComponent
         Children.Add(child);
         child.Parent = this;
     }
+
+    public void MapTree(Action<ProjectComponent> action)
+    {
+        action(this);
+
+        foreach (var child in Children)
+            MapTree(action);
+    }
+
+    public List<T> OfTypeInTree<T>()
+    {
+        var list = new List<T>();
+
+        foreach (var child in Children)
+        {
+            if (child is T t)
+                list.Add(t);
+
+            list.AddRange(child.OfTypeInTree<T>());
+        }
+
+        return list;
+    }
 }

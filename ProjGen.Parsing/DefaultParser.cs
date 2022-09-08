@@ -7,6 +7,12 @@ namespace ProjGen.Parsing;
 
 public class DefaultParser : IParser
 {
+    private const string ASSEMBLY_REGEX = @"^(?<assembly>\S+)/ *(?<type>\S+)";
+    private const string DIRECTORY_REGEX = @"^(?<directory>\S+)/";
+    private const string UNIT_REGEX = @"^(?<unitType>class|interface) (?<name>\w+)(?:<(?<generic>.+?)>)?(?: : (?<inherit>.+))?";
+    private const string METHOD_REGEX = @"^(?<name>\w+)(?:<(?<generic>.+)>)?\((?<args>.*)\)(?: -> (?<returnType>.+))?";
+    private const string PROPERTY_REGEX = @"^(?<name>\w+): (?<type>.+?)(?:(?: (?<get>get)?(?<set>set)?)|(?:\s*$))";
+    private const string REFERENCE_REGEX = @"^reference\s*$";
     private readonly ProjectModel _model = new();
     private string _text = string.Empty;
 
@@ -18,9 +24,72 @@ public class DefaultParser : IParser
     public ProjectModel Parse()
     {
         NormalizeText();
+        var indentModels = IndentSyntaxModel.Parse(_text);
+        _model.Name = indentModels[0].Head;
+        var projectContent = indentModels[0].Content;
+        ParseComponents(_model, projectContent);
+        var referenceContent = indentModels[1].Content;
+        ParseReferences(referenceContent);
 
         return _model;
     }
+
+    public void ParseComponents(ProjectComponent component,
+                                List<IndentSyntaxModel> content)
+    {
+        foreach (var model in content)
+        {
+            ProjectComponent? newComponent;
+
+            if (IsAssembly(model.Head))
+                newComponent = ParseAssembly(model.Head);
+            else if (IsDirectory(model.Head))
+                newComponent = ParseDirectory(model.Head);
+            else if (IsUnit(model.Head))
+                newComponent = ParseUnit(model.Head);
+            else if (IsMethod(model.Head))
+                newComponent = ParseMethod(model.Head);
+            else if (IsProperty(model.Head))
+                newComponent = ParseProperty(model.Head);
+            else
+                throw new Exception($"bad component: {model.Head}");
+
+            component.AddChild(newComponent);
+            ParseComponents(newComponent, model.Content);
+        }
+    }
+
+
+    private void ParseReferences(List<IndentSyntaxModel> content)
+    {
+        var assemblies = _model.OfTypeInTree<AssemblyModel>();
+
+        foreach (var model in content)
+        {
+            var assembly = assemblies.FirstOrDefault(a => a.Name == model.Head);
+
+            if (assembly == null)
+                throw new NullReferenceException(
+                    $"reference: '{model.Head}' not exist in assemblies."
+                );
+            
+            foreach (var refModel in model.Content)
+            {
+                var refAssembly = assemblies.FirstOrDefault(
+                    a => a.Name == refModel.Head
+                );
+
+                if (refAssembly == null)
+                    throw new NullReferenceException(
+                        $"reference: '{refModel.Head}' not exist in assemblies."
+                    );
+
+                assembly.References.Add(refAssembly);
+            }
+        }
+    }
+
+
     private void NormalizeText()
     {
         _text = _text.Replace("\t", "    ");
@@ -28,15 +97,9 @@ public class DefaultParser : IParser
     }
 
 
-    private List<TypeModel> ParseInherits(string genericsText)
+    public static AssemblyModel ParseAssembly(string text)
     {
-        throw new NotImplementedException();
-    }
-
-
-    public AssemblyModel ParseAssembly(string text)
-    {
-        var match = text.RegexMatch(@"^(?<assembly>\S+)/ *(?<type>\S+)");
+        var match = text.RegexMatch(ASSEMBLY_REGEX);
         var name = match.Groups["assembly"].Value;
 
         var type = match.Groups["type"].Value switch
@@ -52,7 +115,7 @@ public class DefaultParser : IParser
 
     public static DirectoryModel ParseDirectory(string text)
     {
-        var name = text.RegexGroup(@"^(?<directory>\S+)/", "directory");
+        var name = text.RegexGroup(DIRECTORY_REGEX, "directory");
 
         return new() { Name = name };
     }
@@ -61,7 +124,7 @@ public class DefaultParser : IParser
     {
         // ^(?<unityType>class|interface) (?<name>\w+)(?:<(?<generic>.+?)>)?(?: : (?<inherit>.+))?
         var match = text.RegexMatch(
-            @"^(?<unitType>class|interface) (?<name>\w+)(?:<(?<generic>.+?)>)?(?: : (?<inherit>.+))?"
+            UNIT_REGEX
         );
 
         var type = match.Groups["unitType"].Value switch
@@ -95,7 +158,7 @@ public class DefaultParser : IParser
     {
         // ^(?<name>\w+)(?:<(?<generic>.+)>)?\((?<args>.*)\)(?: -> (?<returnType>.+))?
         var match = text.RegexMatch(
-            @"^(?<name>\w+)(?:<(?<generic>.+)>)?\((?<args>.*)\)(?: -> (?<returnType>.+))?"
+            METHOD_REGEX
         );
 
         var name = match.Groups["name"].Value;
@@ -126,7 +189,7 @@ public class DefaultParser : IParser
     public static PropertyModel ParseProperty(string text)
     {
         var match = text.RegexMatch(
-            @"^(?<name>\w+): (?<type>.+) (?<get>get)?(?<set>set)?"
+            PROPERTY_REGEX
         );
 
         var name = match.Groups["name"].Value;
@@ -276,4 +339,21 @@ public class DefaultParser : IParser
         }
     }
 
+    public static bool IsAssembly(string text)
+        => text.RegexIsMatch(ASSEMBLY_REGEX);
+
+    public static bool IsDirectory(string text)
+        => text.RegexIsMatch(DIRECTORY_REGEX);
+
+    public static bool IsUnit(string text)
+        => text.RegexIsMatch(UNIT_REGEX);
+
+    public static bool IsMethod(string text)
+        => text.RegexIsMatch(METHOD_REGEX);
+
+    public static bool IsProperty(string text)
+        => text.RegexIsMatch(PROPERTY_REGEX);
+
+    public static bool IsReferenceHeader(string text)
+        => text.RegexIsMatch(REFERENCE_REGEX);
 }

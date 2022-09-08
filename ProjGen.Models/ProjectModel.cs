@@ -1,7 +1,5 @@
 namespace ProjGen.Models;
 
-public class ProjectModel
+public class ProjectModel : ProjectComponent
 {
-    public string? Name { get; set; }
-    public List<AssemblyModel> Assemblies { get; set; } = new();
 }
