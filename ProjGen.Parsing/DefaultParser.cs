@@ -62,18 +62,37 @@ public class DefaultParser : IParser
     }
 
 
-    // public MethodModel ParseMethod(string text)
-    // {
-    //     var match = text.RegexMatch(
-    //         @"^(?<name>.*?)(?:<(?<generic>.+)>)?\((?<args>.*)\) *(?:: *(?<returnType>.+?))\s*$"
-    //     );
+    public static MethodModel ParseMethod(string text)
+    {
+        // ^(?<name>\w+)(?:<(?<generic>.+)>)?\((?<args>.*)\)(?: -> (?<returnType>.+))?
+        var match = text.RegexMatch(
+            @"^(?<name>\w+)(?:<(?<generic>.+)>)?\((?<args>.*)\)(?: -> (?<returnType>.+))?"
+        );
 
-    //     var name = match.Groups["name"].Value;
-    //     var generic = match.Groups["generic"].Value;
-    //     var generics = ParseGeneric(generic);
-    //     var args = match.Groups["args"].Value;
-    //     var returnType = match.Groups["returnType"].Value;
-    // }
+        var name = match.Groups["name"].Value;
+        var genericText = match.Groups["generic"].Value;
+
+        var generics = string.IsNullOrWhiteSpace(genericText) ?
+            new List<TypeModel>() : ParseGeneric(genericText);
+
+        var argsText = match.Groups["args"].Value;
+
+        var args = string.IsNullOrWhiteSpace(argsText) ?
+            new List<VariableModel>() : ParseArgs(argsText);
+
+        var returnTypeText = match.Groups["returnType"].Value;
+
+        var returnType = string.IsNullOrWhiteSpace(returnTypeText) ?
+            new TypeModel { Name = "void" } : ParseType(returnTypeText);
+
+        return new()
+        {
+            Name = name,
+            GenericTypes = generics,
+            Args = args,
+            ReturnType = returnType
+        };
+    }
 
     public static List<VariableModel> ParseArgs(string text)
     {
