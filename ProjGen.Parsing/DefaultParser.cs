@@ -27,7 +27,86 @@ public class DefaultParser : IParser
         _text = _text.Replace("\r", "");
     }
 
-    public static List<TypeModel> ParseGenerics(string genericsText,
+
+    private List<TypeModel> ParseInherits(string genericsText)
+    {
+        throw new NotImplementedException();
+    }
+
+    private void ParseUnit(UnitModel model, string content)
+    {
+        throw new NotImplementedException();
+    }
+
+    public AssemblyModel ParseAssembly(string text)
+    {
+        var match = text.RegexMatch(@"^(?<assembly>\S+)/ *(?<type>\S+)");
+        var name = match.Groups["assembly"].Value;
+
+        var type = match.Groups["type"].Value switch
+        {
+            "lib" => AssemblyModel.AssemblyType.Library,
+            "exe" => AssemblyModel.AssemblyType.Executable,
+            "test" => AssemblyModel.AssemblyType.Test,
+            _ => throw new Exception("unknown assembly type")
+        };
+
+        return new() { Name = name, Type = type };
+    }
+
+    public DirectoryModel ParseDirectory(string text)
+    {
+        var name = text.RegexGroup(@"^(?<directory>\S+)/", "directory");
+
+        return new() { Name = name };
+    }
+
+
+    // public MethodModel ParseMethod(string text)
+    // {
+    //     var match = text.RegexMatch(
+    //         @"^(?<name>.*?)(?:<(?<generic>.+)>)?\((?<args>.*)\) *(?:: *(?<returnType>.+?))\s*$"
+    //     );
+
+    //     var name = match.Groups["name"].Value;
+    //     var generic = match.Groups["generic"].Value;
+    //     var generics = ParseGeneric(generic);
+    //     var args = match.Groups["args"].Value;
+    //     var returnType = match.Groups["returnType"].Value;
+    // }
+
+    public static List<VariableModel> ParseArgs(string text)
+    {
+        // (?<name>\w+): (?<type>.*?)(?=(?:\s*$)|(?:, \w+:))
+
+        var list = new List<VariableModel>();
+
+        text.RegexMatches(@"(?<name>\w+): (?<type>.*?)(?=(?:\s*$)|(?:, \w+:))")
+            .Map(match =>
+        {
+            var name = match.Groups["name"].Value;
+            var typeText = match.Groups["type"].Value;
+            var type = ParseType(typeText);
+            list.Add(new() { Name = name, Type = type });
+        });
+
+        return list;
+    }
+
+    public static TypeModel ParseType(string text)
+    {
+        // ^(?<name>\w+)(?:<(?<generic>.+)>)?
+        var match = text.RegexMatch(@"^(?<name>\w+)(?:<(?<generic>.+)>)?");
+        var name = match.Groups["name"].Value;
+        var genericText = match.Groups["generic"].Value;
+
+        var generics = string.IsNullOrWhiteSpace(genericText) ?
+            new List<TypeModel>() : ParseGeneric(genericText);
+
+        return new() { Name = name, Generics = generics };
+    }
+
+    public static List<TypeModel> ParseGeneric(string genericsText,
                                                 TypeModel? parent = null,
                                                 List<TypeModel>? list = null)
     {
@@ -87,44 +166,9 @@ public class DefaultParser : IParser
 
 
         if (!string.IsNullOrWhiteSpace(rest))
-            return ParseGenerics(rest, nextParent, list);
+            return ParseGeneric(rest, nextParent, list);
 
         return list;
-    }
-
-    private List<TypeModel> ParseInherits(string genericsText)
-    {
-        throw new NotImplementedException();
-    }
-
-    private void ParseUnit(UnitModel model, string content)
-    {
-        throw new NotImplementedException();
-    }
-
-    public AssemblyModel ParseAssembly(string text)
-    {
-        throw new NotImplementedException();
-    }
-
-    public DirectoryModel ParseDirectory(string text)
-    {
-        throw new NotImplementedException();
-    }
-
-    public MethodModel ParseMethod(string text)
-    {
-        throw new NotImplementedException();
-    }
-
-    public PropertyModel ParseProperty(string text)
-    {
-        throw new NotImplementedException();
-    }
-
-    public UnitModel ParseUnit(string text)
-    {
-        throw new NotImplementedException();
     }
 
     public class IndentSyntaxModel
@@ -143,11 +187,11 @@ public class DefaultParser : IParser
             {
                 var head = match.Groups["head"].Value.Trim();
                 var content = match.Groups["content"].Value;
-                var model = new IndentSyntaxModel{ Head = head };
+                var model = new IndentSyntaxModel { Head = head };
 
                 if (!string.IsNullOrWhiteSpace(content))
                 {
-                    content = content.RegexReplace(@"^ {"+indent+"}",
+                    content = content.RegexReplace(@"^ {" + indent + "}",
                                                    string.Empty,
                                                    RegexOptions.Multiline);
 
