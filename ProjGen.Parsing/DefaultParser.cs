@@ -11,7 +11,7 @@ public class DefaultParser : IParser
     private const string DIRECTORY_REGEX = @"^(?<directory>\S+)/";
     private const string UNIT_REGEX = @"^(?<unitType>class|interface) (?<name>\w+)(?:<(?<generic>.+?)>)?(?: : (?<inherit>.+))?";
     private const string METHOD_REGEX = @"^(?<name>\w+)(?:<(?<generic>.+)>)?\((?<args>.*)\)(?: -> (?<returnType>.+))?";
-    private const string PROPERTY_REGEX = @"^(?<name>\w+): (?<type>\w+(?:<.+>)?)(?: (?<get>get)?(?<set>set)?)";
+    private const string PROPERTY_REGEX = @"^(?<name>\w+): (?<type>\w+(?:<.+>)?)(?: (?<get>get)?(?<set>set)?)?";
     private const string REFERENCE_REGEX = @"^reference\s*$";
     private readonly ProjectModel _model = new();
     private string _text = string.Empty;
@@ -305,15 +305,14 @@ public class DefaultParser : IParser
     {
         public string Head { get; set; } = string.Empty;
         public List<IndentSyntaxModel> Content { get; set; } = new();
+        private const string INDENT_MODEL_REGEX =
+            @"(?<=^|\n)(?<head>\S.*)(?:(?<content>[\s\S]*?)(?=(?:\n\S)|(?:$)))";
 
         public static List<IndentSyntaxModel> Parse(string text, int indent = 4)
         {
             var list = new List<IndentSyntaxModel>();
 
-            text.RegexMatches(
-                @"(?<=^|\n)(?<head>\S.*)(?:(?<content>[\s\S]*?)(?=(?:\n\S)|(?:$)))"
-            )
-            .Map(match =>
+            text.RegexMatches(INDENT_MODEL_REGEX).Map(match =>
             {
                 var head = match.Groups["head"].Value.Trim();
                 var content = match.Groups["content"].Value;
