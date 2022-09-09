@@ -4,5 +4,5 @@ namespace ProjGen.Parsing;
 
 public interface IParser
 {
-    ProjectModel Parse();
+    ProjectModel Parse(string text);
 }

@@ -16,13 +16,9 @@ public class DefaultParser : IParser
     private readonly ProjectModel _model = new();
     private string _text = string.Empty;
 
-    public DefaultParser(string text)
+    public ProjectModel Parse(string text)
     {
         _text = text;
-    }
-
-    public ProjectModel Parse()
-    {
         NormalizeText();
         var indentModels = IndentSyntaxModel.Parse(_text);
         _model.Name = indentModels[0].Head;
