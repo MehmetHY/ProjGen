@@ -11,7 +11,7 @@ public class DefaultParser : IParser
     private const string DIRECTORY_REGEX = @"^(?<directory>\S+)/";
     private const string UNIT_REGEX = @"^(?<unitType>class|interface) (?<name>\w+)(?:<(?<generic>.+?)>)?(?: : (?<inherit>.+))?";
     private const string METHOD_REGEX = @"^(?<name>\w+)(?:<(?<generic>.+)>)?\((?<args>.*)\)(?: -> (?<returnType>.+))?";
-    private const string PROPERTY_REGEX = @"^(?<name>\w+): (?<type>.+?)(?:(?: (?<get>get)?(?<set>set)?)|(?:\s*$))";
+    private const string PROPERTY_REGEX = @"^(?<name>\w+): (?<type>\w+(?:<.+>)?)(?: (?<get>get)?(?<set>set)?)";
     private const string REFERENCE_REGEX = @"^reference\s*$";
     private readonly ProjectModel _model = new();
     private string _text = string.Empty;
@@ -289,7 +289,7 @@ public class DefaultParser : IParser
         else if (endGeneric)
         {
             if (parent == null)
-                throw new Exception($"bad generic text: $'{genericsText}'");
+                throw new Exception($"bad generic text: '{genericsText}'");
 
             nextParent = parent.Parent;
         }
