@@ -24,8 +24,7 @@ argStr.RegexMatches(@"(?<option>\w) ""?(?<value>.*?)""?(?= *-|$)").Map(match =>
     }
 });
 
-if (string.IsNullOrWhiteSpace(inputFile) ||
-    string.IsNullOrWhiteSpace(exportDir))
+if (inputFile == string.Empty || exportDir == string.Empty)
 {
     Console.WriteLine(
         "Bad commandline arguments. Example: '-f inputFile -o exportDir'"

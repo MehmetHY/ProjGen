@@ -89,7 +89,7 @@ public class DefaultParser : IParser
     private void NormalizeText()
     {
         _text = _text.Replace("\t", "    ");
-        _text = _text.Replace("\r", "");
+        _text = _text.Replace("\r", "\n");
     }
 
 
@@ -118,7 +118,6 @@ public class DefaultParser : IParser
 
     public static UnitModel ParseUnit(string text)
     {
-        // ^(?<unityType>class|interface) (?<name>\w+)(?:<(?<generic>.+?)>)?(?: : (?<inherit>.+))?
         var match = text.RegexMatch(
             UNIT_REGEX
         );
@@ -152,7 +151,6 @@ public class DefaultParser : IParser
 
     public static MethodModel ParseMethod(string text)
     {
-        // ^(?<name>\w+)(?:<(?<generic>.+)>)?\((?<args>.*)\)(?: -> (?<returnType>.+))?
         var match = text.RegexMatch(
             METHOD_REGEX
         );
@@ -207,8 +205,6 @@ public class DefaultParser : IParser
 
     public static List<VariableModel> ParseArgs(string text)
     {
-        // (?<name>\w+): (?<type>.*?)(?=(?:\s*$)|(?:, \w+:))
-
         var list = new List<VariableModel>();
 
         text.RegexMatches(@"(?<name>\w+): (?<type>.*?)(?=(?:\s*$)|(?:, \w+:))")
@@ -225,7 +221,6 @@ public class DefaultParser : IParser
 
     public static TypeModel ParseType(string text)
     {
-        // ^(?<name>\w+)(?:<(?<generic>.+)>)?
         var match = text.RegexMatch(@"^(?<name>\w+)(?:<(?<generic>.+)>)?");
         var name = match.Groups["name"].Value;
         var genericText = match.Groups["generic"].Value;
@@ -242,9 +237,6 @@ public class DefaultParser : IParser
     {
         if (list == null)
             list = new List<TypeModel>();
-
-        // https://regex101.com/r/Qxd5oM/1
-        // https://regex101.com/delete/4T9mfHJfSVISYtS3Vj0hziil
 
         var match = genericsText.RegexMatch(
             @"^\s*(?:(?:(?<newGeneric>\w+)<)|(?<newType>\w+)|(?<endGeneric>>))[ ,]*(?<rest>.*)"

@@ -31,9 +31,9 @@ public class Context
     }
 
 
-    public virtual ProjectModel? Model { get; private set; }
-    public virtual IExporter Exporter { get; }
-    public virtual IParser Parser { get; }
+    public ProjectModel? Model { get; private set; }
+    public IExporter Exporter { get; }
+    public IParser Parser { get; }
 
 
     private Context(IExporter exporter, IParser parser)
