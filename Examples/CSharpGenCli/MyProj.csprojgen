@@ -1,0 +1,25 @@
+MyProject
+    MyLibraryAssembly/ lib
+        MyFolder/
+            interface IMyInterface 
+                MyProperty1: List<int> getset
+                MyProperty2: Dictionary<int, List<string>> get
+                MyProperty3: string set
+
+    MyExecutableAssembly/ exe
+        class MyClass : IMyInterface
+            MyMethod(arg1: int, arg2: float) -> List<string>
+            _myField: float
+        class MyGenericClass<T1, T2> : MyClass, AnotherBaseClass<T1>
+            MyGenericMethod<T1>() -> List<T2>
+
+    MyUnitTestAssembly/ test
+
+
+
+reference
+    MyExecutableAssembly
+        MyLibraryAssembly
+    MyUnitTestAssembly
+        MyLibraryAssembly
+        MyExecutableAssembly
