@@ -15,6 +15,10 @@ public class CSharpExporter : IExporter
     public void Export(ProjectModel model, string exportDir)
     {
         _assemblies = model.OfTypeInTree<AssemblyModel>();
+
+        if (!Directory.Exists(exportDir))
+            throw new Exception($"Directory: '{exportDir}' doesn't exist.");
+
         _rootPath = Path.Combine(exportDir, model.Name ?? "Project");
 
         CreateRootDirectory();
@@ -128,7 +132,7 @@ public class CSharpExporter : IExporter
         File.WriteAllText(file, content);
     }
 
-    public static string TypeToString(TypeModel? model)
+    private static string TypeToString(TypeModel? model)
     {
         if (model == null)
             return "void";
@@ -157,7 +161,7 @@ public class CSharpExporter : IExporter
         return typeStr;
     }
 
-    public static string TypesToString(List<TypeModel> models)
+    private static string TypesToString(List<TypeModel> models)
     {
         var sb = new StringBuilder();
 
@@ -175,7 +179,7 @@ public class CSharpExporter : IExporter
         return typesStr;
     }
 
-    public static string VariableToString(VariableModel model)
+    private static string VariableToString(VariableModel model)
     {
         var type = TypeToString(model.Type!);
         var variableStr = $"{type} {model.Name}";
@@ -183,7 +187,7 @@ public class CSharpExporter : IExporter
         return variableStr;
     }
 
-    public static string VariablesToString(List<VariableModel> models)
+    private static string VariablesToString(List<VariableModel> models)
     {
         var sb = new StringBuilder();
 
@@ -201,7 +205,7 @@ public class CSharpExporter : IExporter
         return variablesStr;
     }
 
-    public static string PropertyToString(PropertyModel model,
+    private static string PropertyToString(PropertyModel model,
                                           bool accessModifiers = true)
     {
         var sb = new StringBuilder();
@@ -244,7 +248,7 @@ public class CSharpExporter : IExporter
         return propStr;
     }
 
-    public static string MethodToString(MethodModel model,
+    private static string MethodToString(MethodModel model,
                                         bool accessModifiers = true)
     {
         var sb = new StringBuilder();
@@ -328,7 +332,12 @@ public class CSharpExporter : IExporter
             if (isInterface)
                 sb.AppendLine(";");
             else
-                sb.AppendLine("\n    {\n\n    }");
+            {
+
+                sb.AppendLine("\n    {")
+                  .AppendLine("        throw new NotImplementedException();")
+                  .AppendLine("    }");
+            }
         }
 
         sb.AppendLine("}");
